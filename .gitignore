@@ -1,0 +1,8 @@
+.env
+docker-compose.yml
+docker-compose.yaml
+node_modules
+db_data
+vendor
+env/**
+wp-content/uploads/**
