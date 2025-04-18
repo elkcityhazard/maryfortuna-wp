@@ -1,0 +1,80 @@
+services:
+  db:
+    image: mysql:8.2
+    restart: always
+    ports:
+      - 3306:3306
+    environment:
+      MYSQL_ROOT_PASSWORD: ROOT_PASSWORD
+      MYSQL_DATABASE: DB_NAME
+      MYSQL_USER: DB_USERNAME
+      MYSQL_PASSWORD: DB_USER_PASSWORD
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-pyourmysqlrootpass"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - ./db_data:/var/lib/mysql
+    networks:
+      - wordpress
+
+  wordpress:
+    image: wordpress:php8.4
+    restart: always
+    depends_on:
+      - db
+    ports:
+      - "8000:80"
+    environment:
+      WORDPRESS_DEBUG: true
+      WP_DEBUG_LOG: true
+      WP_DEBUG_DISPLAY: true
+      WORDPRESS_DB_HOST: db:3306
+      WORDPRESS_DB_USER: DB_USERNAME
+      WORDPRESS_DB_PASSWORD: DB_USER_PASS
+      WORDPRESS_DB_NAME: DB_NAME
+      SMTP_HOST: SMTP_HOST_ADDRESS
+      SMTP_USER: SMTP_USER
+      SMTP_PASS: SMTP_PASS
+      SMTP_PORT: SMTP_PORT
+      SMTP_FROM: SMTP_FROM_ADDR
+      SMTP_TO: SMTP_TO_ADDR
+      SMTP_SUBJECT: DEFAULT_SMTP_SUBJECT
+      IS_PRODUCTION: false
+    volumes:
+      - wordpress_data:/var/www/html
+      - ./wp-content:/var/www/html/wp-content
+      - ./wordpress.ini:/usr/local/etc/php/conf.d/wordpress.ini
+      - ./vendor:/var/www/html/vendor
+      - ./env:/var/www/html/.env
+    networks: 
+      - wordpress
+    
+  wpcli:
+    image: wordpress:cli
+    restart: always
+    environment:
+       WORDPRESS_DB_USER: DB_USER
+       WORDPRESS_DB_PASSWORD: DB_USER_PASS
+       WORDPRESS_DB_HOST: db:3306
+       WORDPRESS_DB_NAME: DB_NAME
+    depends_on: 
+      - wordpress
+      - db
+    volumes:
+      - wordpress_data:/var/www/html
+      - ./wp-content:/var/www/html/wp-content
+      - ./wordpress.ini:/usr/local/etc/php/conf.d/wordpress.ini
+    tty: true
+    networks: 
+      - wordpress
+
+volumes:
+  db_data:
+  wordpress_data:
+networks:
+  wordpress:
+    driver: bridge
+
+
